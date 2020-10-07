@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+    <h1>2020-22845 권혁준</h1>
+</head>
+
+<body>
+
+    
+    <form>
+        <input type='button' value='update' onclick='update()'>
+    </form>
+
+    <div id="scatterchart" style="float:left; height: 600px; width: 600px;"></div>
+    <div id="barchart" style="display: inline-block; height: 600px; width: 600px;"></div>
+
+    </svg>
+
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+
+    <script>
+        // chart default setting
+        let num_point = 100;
+        let num_update_point = 25;
+        let svgWidth = 600;
+        let svgHeight = 600;
+        let margin = {top: 10, right: 10, bottom:20, left: 30};
+        let width = svgWidth - margin.left - margin.right;
+        let height = svgHeight - margin.top - margin.bottom;
+
+       
+        
+        // Some routines
+        function get_rgb(r, g, b) {
+            return 'rgb(' + r + ',' + g + ',' + b + ')';
+        }
+
+        // Define Scalers      
+        function scatter_x_scaleLinear(cur_data){
+            return d3.scaleLinear()
+                .domain([
+                d3.min(cur_data, d => d.cx),
+                d3.max(cur_data, d => d.cx)
+                ])
+                .range([0, width]);
+        }
+
+        function scatter_y_scaleLinear(cur_data){
+            return d3.scaleLinear()
+                .domain([
+                d3.min(cur_data, d => d.cy),
+                d3.max(cur_data, d => d.cy)
+                ])
+                .range([height, 0]);
+        }
+
+        
+        // Generate random point
+        let class_mapping = d3.scaleOrdinal()
+            .domain([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+            .range(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']);
+
+        
+        function generate_random_point(new_id) {
+            let point = {};
+            point.id = new_id;
+            point.cx = d3.randomNormal(0, 100)();
+            point.cy = d3.randomNormal(0, 100)();
+            point.radius = Math.random() * 6 + 2;
+            point.red = Math.floor(Math.random() * 255.999999); 
+            point.green = Math.floor(Math.random() * 255.999999); 
+            point.blue = Math.floor(Math.random() * 255.999999); 
+            point.class = class_mapping(Math.floor(Math.random() * 9.999999));
+            return point;
+        }
+        
+        
+        
+        // Generate initial data
+        let data = []
+        for (let i = 0; i < num_point; i++){
+            data.push(generate_random_point(i));
+        }
+        
+        // scatter chart
+        let scatter_chart_svg = d3.select('#scatterchart')
+                    .append('svg')
+                    .attr('width', svgWidth)
+                    .attr('height', svgHeight)
+                    .append('g')
+                    .attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+        // Draw Axis
+        scatter_chart_svg.append('g')
+                            .attr('id', 'xaxis')
+                            .attr('transform', `translate(0, ${height})`)
+                            .call(d3.axisBottom(scatter_x_scaleLinear(data)));
+        scatter_chart_svg.append('g')
+                            .attr('id', 'yaxis')
+                            .call(d3.axisLeft(scatter_y_scaleLinear(data)));
+        
+
+        // Draw points
+        scatter_chart_svg.selectAll('circle')
+            .data(data, d => d.id)
+            .enter()
+            .append('circle')
+            .attr('r', d => d.radius)
+            .attr('cx', d => scatter_x_scaleLinear(data)(d.cx))
+            .attr('cy', d => scatter_y_scaleLinear(data)(d.cy))
+            .style('fill', d => get_rgb(d.red, d.green, d.blue));
+
+
+        // bar chart
+        let bar_chart_svg = d3.select('#barchart')
+                            .append('svg')
+                            .attr('width', svgWidth)
+                            .attr('height', svgHeight)
+                            .append('g')
+                            .attr('transform', `translate(${margin.left}, ${margin.top})`);
+        
+        // Draw Axis
+        bar_chart_svg.append('g')
+                        .attr('id', 'xaxis')
+                        .attr('transform', `translate(0, ${height})`)
+                        .call(d3.axisBottom(scatter_x_scaleLinear(data)));
+        bar_chart_svg.append('g')
+                        .attr('id', 'yaxis')
+                        .call(d3.axisLeft(scatter_y_scaleLinear(data)));
+
+         // Update button function
+         function update() {
+            // Generate New data
+            let new_data = [];
+            for (let i = data[0].id + num_update_point; i < data[0].id + num_point + num_update_point; i++){
+                new_data.push(generate_random_point(i));
+            }
+            // Update data list
+            data = new_data
+            
+            // Update scatter chart //
+            const scatter_update = scatter_chart_svg.selectAll('circle').data(new_data, d => d.id);
+            const t = scatter_chart_svg.transition()
+                                        .duration(3000);
+                // exit selection
+            scatter_update.exit().remove();
+
+                // update and enter selection
+            scatter_update.call(update => update.transition(t)
+                                                .attr('r', d => d.radius)
+                                                .attr('cx', d => scatter_x_scaleLinear(data)(d.cx))
+                                                .attr('cy', d => scatter_y_scaleLinear(data)(d.cy))
+                                                .style('fill', d => get_rgb(d.red, d.green, d.blue)))
+                            .enter()
+                            .append('circle')
+                            .attr('r', d => d.radius)
+                            .attr('cx', d => scatter_x_scaleLinear(data)(d.cx))
+                            .attr('cy', d =>scatter_y_scaleLinear(data)(d.cy))
+                            .style('opacity', 0)
+                            .style('fill', d => get_rgb(d.red, d.green, d.blue))
+                            .transition()
+                            .duration(1000)
+                            .style('opacity', 1);
+                // Draw Axis
+            scatter_chart_svg.select('#xaxis')
+                            .attr('transform', `translate(0, ${height})`)
+                            .call(d3.axisBottom(scatter_x_scaleLinear(data)));
+            scatter_chart_svg.select('#yaxis')
+                            .call(d3.axisLeft(scatter_y_scaleLinear(data)));
+                  
+         
+
+           
+            
+        }
+        // // bar chart
+        // let scatter_chart_svg = d3.select('#barchart')
+        //             .append('svg')
+        //             .attr('width', svgWidth)
+        //             .attr('height', svgHeight)
+        //             .append('g')
+        //             .attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+    </script>
+</body>
+    
