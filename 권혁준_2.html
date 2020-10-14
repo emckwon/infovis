@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+    <h1>2020-22845 권혁준</h1>
+</head>
+
+<body>
+
+    
+    <div id="optionarea" style="height: 50px; width: 600px;">
+        <select name="yearselect">
+            <option value="A">Apple</option>
+            <option value="B">Banana</option>
+            <option value="O" selected="selected">Orange</option> <!-- 옵션 기본 선택 -->
+            <option value="P" disabled="disabled">Pear</option> <!-- 옵션 비활성화 -->
+            <option value="M">Mango</option>
+        </select>
+        <select name="categoryselect">
+            <option value="Rank" selected="selected">Rank</option>
+            <option value="WR">WR</option>
+            <option value="DG">DG</option>
+        </select>
+    </div>
+    <div id="table" style="float:left; height: 600px; width: 600px; background-color: red"></div>
+    <div id="linechart" style="float:left; display: inline-block; height: 600px; width: 600px; background-color:seagreen;"></div>
+    <div id="barchart" style="display: inline-block; height: 600px; width: 600px; background-color: blueviolet;"></div>
+
+
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+
+    <script>
+        // chart default setting
+        // let num_point = 100;
+        // let num_update_point = 25;
+        // let svgWidth = 600;
+        // let svgHeight = 600;
+        // let margin = {top: 10, right: 10, bottom:20, left: 30};
+        // let width = svgWidth - margin.left - margin.right;
+        // let height = svgHeight - margin.top - margin.bottom;
+
+        d3.json('data.json').then(function(data){
+            function init(){
+                // Append year list as option to "year" select
+                let add_year = document.createElement('option');
+                let select_year = d3.select("")
+            }
+
+
+            function update(){
+
+            }
+
+            init();
+
+            d3.selectAll('select').on('change', function(event, k){
+                update();
+            });
+
+        });
+
+       
+        
+    </script>
+</body>
+    
