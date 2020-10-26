@@ -2,6 +2,7 @@
 <meta charset="utf-8">
 <head>
     <h1>2020-22845 권혁준</h1>
+    <h2>KBO Rankings</h2>
 </head>
 
 <body>
@@ -21,8 +22,8 @@
             <option value="DG">DG</option>
         </select>
     </div>
-    <div id="table" style="float:left; height: 600px; width: 600px; background-color: red"></div>
-    <div id="linechart" style="float:left; display: inline-block; height: 600px; width: 600px; background-color:seagreen;"></div>
+    <div id="table" style="float:left; height: 600px; width: 450px;"></div>
+    <div id="linechart" style="float:left; display: inline-block; height: 600px; width: 660px;"></div>
     <div id="barchart" style="display: inline-block; height: 600px; width: 600px; background-color: blueviolet;"></div>
 
 
@@ -32,17 +33,125 @@
         // chart default setting
         // let num_point = 100;
         // let num_update_point = 25;
-        // let svgWidth = 600;
-        // let svgHeight = 600;
-        // let margin = {top: 10, right: 10, bottom:20, left: 30};
-        // let width = svgWidth - margin.left - margin.right;
-        // let height = svgHeight - margin.top - margin.bottom;
+        let svgHeight = 600;
+        let margin = {top: 10, right: 0, bottom: 20, left: 0};
+        let height = svgHeight - margin.top - margin.bottom;
+        let init_year = 0
+        let init_attribute = 'rank'
 
+        //Team color
+        let teamColor = d3.scaleOrdinal()
+            .domain(['OB', 'Samsung', 'MBC', 'Haitai', 'Lotte', 'Sammi'])
+            .range(['darkblue', 'blue', 'green', 'red', 'orange', 'skyblue']);
+        let teamID = d3.scaleOrdinal()
+            .domain(['OB', 'Samsung', 'MBC', 'Haitai', 'Lotte', 'Sammi'])
+            .range([0,1,2,3,4,5]);
+        
         d3.json('data.json').then(function(data){
             function init(){
                 // Append year list as option to "year" select
-                let add_year = document.createElement('option');
-                let select_year = d3.select("")
+                // let add_year = document.createElement('option');
+                // let select_year = d3.select("")
+
+                // Make id for each year - rank to team
+                data.forEach(d => {
+                    d['rankings'].forEach(d => {
+                        d.id = d['team']
+                    })
+                });
+
+                // make table
+                let keys = Object.keys(data[0]['rankings'][0])
+                
+                let table = d3.select('#table')
+                                .append('svg')
+                                .attr('width', 420)
+                                .attr('height', svgHeight)
+                                .append('g')
+                                .attr('transform', `translate(${margin.left}, ${margin.top})`);            
+                
+                let team_row = table.selectAll('text').data(data[init_year]['rankings'], d => d.id)
+                                .enter()
+                                .append('text')
+                                .attr('role', 'teamRow')
+                                .attr('y', d => 10 + 50 * parseInt(d['rank']))
+                                .attr('fill', d => teamColor(d['team']))
+                                .append('tspan').attr('x', 10).text(d => d['rank'])
+                                .append('tspan').attr('x', 60).text(d => d['team'])
+                                .append('tspan').attr('x', 145).text(d => d['W'])
+                                .append('tspan').attr('x', 185).text(d => d['D'])
+                                .append('tspan').attr('x', 225).text(d => d['L'])
+                                .append('tspan').attr('x', 265).text(d => d['win_rate'])
+                                .append('tspan').attr('x', 340).text(d => d['diff_game']);
+
+                let header_row = table.append('text').attr('y', 10)
+                                .attr('role', 'headerRow').attr('font-weight', 'bold')
+                                .append('tspan').attr('x', 10).text(keys[0])
+                                .append('tspan').attr('x', 60).text(keys[1])
+                                .append('tspan').attr('x', 145).text(keys[3])
+                                .append('tspan').attr('x', 185).text(keys[5])
+                                .append('tspan').attr('x', 225).text(keys[4])
+                                .append('tspan').attr('x', 265).text(keys[6])
+                                .append('tspan').attr('x', 340).text(keys[7]);
+
+                // make line chart
+                // Draw Axis
+                function line_xaxis(){
+                    return d3.scaleLinear()
+                            .domain([
+                                d3.min(data, d => d['year']),
+                                d3.max(data, d => d['year'])
+                                ])
+                            .range([0, 600 - 20]);
+                }
+                function line_yaxis(cur_year_data, attribute){
+                    //attribute : rank, win_rate, diff_game
+                    return d3.scaleLinear()
+                            .domain([
+                                d3.min(cur_year_data, d => d[attribute]),
+                                d3.max(cur_year_data, d => d[attribute])
+                                ])
+                            .range([height, 0]);
+                }
+               
+                let linechart = d3.select('#linechart')
+                                .append('svg')
+                                .attr('width', 600)
+                                .attr('height', svgHeight)
+                                .append('g')
+                                .attr('transform', `translate(${margin.left}, ${margin.top})`);
+                
+                
+                linechart.append('g')
+                        .attr('id', 'xaxis')
+                        .attr('transform', `translate(30, ${height})`)
+                        .call(d3.axisBottom(line_xaxis()));
+                        
+                linechart.append('g')
+                        .attr('id', 'yaxis')
+                        .attr('transform', `translate(30, 0)`)
+                        .call(d3.axisLeft(line_yaxis(data[init_year]['rankings'], init_attribute)));
+
+                // let line = d3.line()
+                //             .x(function(d) { return line_xaxis()(d['year']); })
+                //             .y(function(d) { return line_yaxis(d['rankings'], init_attribute)(d['rank']); });
+                            
+                // let lines = linechart.selectAll('.line')
+                //                 .data(data)
+                //                 .enter()
+                //                 .append('path')
+                //                 .attr('fill','none')
+                //                 .attr('stroke', d => teamColor);
+               
+                
+
+                // make line chart
+                let barchart = d3.select('#barchart')
+                                .append('svg')
+                                .attr('width', 480)
+                                .attr('height', svgHeight)
+                                .append('g')
+                                .attr('transform', `translate(${margin.left}, ${margin.top})`);    
             }
 
 
